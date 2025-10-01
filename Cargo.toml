@@ -12,4 +12,7 @@ name = "server"
 path = "src/server.rs"
 
 [dependencies]
+ctrlc = "3.5.0"
+get_if_addrs = "0.5.3"
 nix = { version = "0.30.1", features = ["socket", "fs", "signal"] }
+socket2 = "0.6.0"
