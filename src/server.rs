@@ -2,7 +2,6 @@ mod networking_util;
 mod cipher;
 
 // standard
-use std::net::{SocketAddrV4, Ipv4Addr};
 use::std::{process, env};
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
@@ -11,13 +10,12 @@ use std::sync::atomic::Ordering;
 use ctrlc;
 
 // network sockets
-use socket2::{Socket, Domain, Type, SockAddr};
+use socket2::{Socket};
 use nix::sys::socket::{
     MsgFlags, send, recv
 };
 
 // other util
-use get_if_addrs::get_if_addrs;
 use networking_util::{
     check_valid_ip, server_arg_validation, setup_server
 };
@@ -89,9 +87,10 @@ fn main() {
         println!("[SERVER] Payload: {}", String::from_utf8_lossy(&buf[..read_bytes]));
 
         // process
-        
+        let response = split_payload(&buf);
+
         //send
-        send(clientfd.as_raw_fd(), b"owo!", MsgFlags::empty()).expect("[SERVER] Error sending response");
+        send(clientfd.as_raw_fd(), response.as_bytes(), MsgFlags::empty()).expect("[SERVER] Error sending response");
     }
     println!("[SERVER] SIGINT caught");
     drop(socket);

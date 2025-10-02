@@ -12,7 +12,6 @@ use std::os::fd::AsRawFd;
 
 
 use socket2::{Socket, Domain, Type, SockAddr};
-// use std::io::Read;
 use std::net::{SocketAddrV4};
 
 fn main() {
@@ -48,15 +47,6 @@ fn main() {
         }
     };
 
-
-
-
-
-
     // Receive the response
     client_response_handler(&socket);
-
-    // let buffer_slice = &buffer[..received_bytes];
-    // println!("[CLIENT] Encoded Message: {:?}", str::from_utf8(buffer_slice).unwrap());
-    // println!("Message from server: {}", String::from_utf8_lossy(&buffer[..read_bytes]));
 }

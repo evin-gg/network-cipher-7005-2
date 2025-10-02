@@ -22,14 +22,19 @@ pub fn client_arg_validation(args: Vec<String>) -> Result<(), String> {
     if args.len() != 5 {
         return Err("[CLIENT] Usage: <message> <key> <IP address> <port>".to_string());
     }
-    else {
-        Ok(()) 
+
+    for i in args[2].chars() {
+        if !i.is_ascii_alphabetic() {
+            return Err("[CLIENT] the key must be ascii alphabetic".to_string());
+        }
     }
+    
+    Ok(()) 
 }
 
 // formatting into send (variable)
 pub fn format_send(args: Vec<String>, sock: &Socket) -> Result<(), String> {
-    let payload = format!("{}|{}", args[1], args[2]);
+    let payload = format!("{}|{}", args[2].to_ascii_lowercase(), args[1]);
 
     match send(sock.as_raw_fd(), payload.as_bytes(), MsgFlags::empty()) {
         Ok(_bytes) => {return Ok(())},
