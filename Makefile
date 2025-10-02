@@ -7,4 +7,4 @@ build:
 server:
 	cargo clean
 	cargo build
-	cargo run --bin server
+	cargo run --bin server 192.168.1.79

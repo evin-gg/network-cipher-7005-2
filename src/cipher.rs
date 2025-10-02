@@ -4,21 +4,19 @@ use std::str;
 pub fn split_payload(input: &[u8]) -> String {
 
     let input_str = str::from_utf8(input).unwrap();
-
-    let mut parts = input_str.splitn(2, ' ');
-
-    let cipher = parts.next().unwrap();
+    let mut parts = input_str.splitn(2, '|');
+    let key = parts.next().unwrap();
     let text = parts.next().unwrap();
 
-    println!("Cipher: {}", cipher);
+    println!("Key: {}", key);
     println!("Text: {}", text); 
 
-    let encoded_message = shift(text, cipher.parse::<i32>().unwrap());
+    let encoded_message = shift_vig(text, key.parse::<i32>().unwrap());
 
     return encoded_message;
 }
 
-pub fn shift(text: &str, shift: i32) -> String {
+pub fn shift_vig(text: &str, shift: i32) -> String {
     let mut result = String::new();
 
     for c in text.chars() {

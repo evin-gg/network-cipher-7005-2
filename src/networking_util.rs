@@ -2,7 +2,7 @@
 
 // standard
 use std::os::fd::AsRawFd;
-use std::net::{Ipv4Addr, IpAddr, SocketAddrV4};
+use std::net::{Ipv4Addr, IpAddr, SocketAddrV4, SocketAddrV6};
 
 // network sockets
 use nix::sys::socket::{
@@ -67,15 +67,21 @@ pub fn server_arg_validation(args: &Vec<String>) -> Result<(), String> {
 }
 
 pub fn setup_server(args: &Vec<String>) -> Result<Socket, String> {
-    let local_ip: Ipv4Addr = args[1].parse().unwrap();
-    let socket = match Socket::new(Domain::IPV4, Type::STREAM, None) {
+    let local_ip: IpAddr = args[1].parse().unwrap();
+
+    let (domain, addr) = match local_ip {
+        IpAddr::V4(v4) => (Domain::IPV4, SockAddr::from(SocketAddrV4::new(v4, 0))),
+        IpAddr::V6(v6) => (Domain::IPV6, SockAddr::from(SocketAddrV6::new(v6, 0, 0, 0))),
+    };
+
+
+    let socket = match Socket::new(domain, Type::STREAM, None) {
         Ok(s) => s,
         Err(e) => {
             return Err(format!("[CLIENT] Socket creation failed: {}", e))
         }
     };
 
-    let addr = SockAddr::from(SocketAddrV4::new(local_ip, 0));
     match socket.bind(&addr) {
         Ok(()) => {},
         Err(e) => {
@@ -91,7 +97,6 @@ pub fn setup_server(args: &Vec<String>) -> Result<Socket, String> {
     }
 
     let local_addr = socket.local_addr().expect("[SERVER] Could not get local address");
-
     let std_addr = local_addr.as_socket_ipv4().unwrap();
     println!("[SERVER] Server listening on {}", std_addr);
 
@@ -104,6 +109,10 @@ pub fn setup_server(args: &Vec<String>) -> Result<Socket, String> {
 
 // checks for a valid ip
 pub fn check_valid_ip(argpath: &String) -> Result<(), String> {
+
+    if argpath == "localhost" || argpath == "127.0.0.1" {
+        return Ok(());
+    }
 
     let addr: Result<IpAddr, String> = match argpath.parse::<IpAddr>() {
         Ok(ip) => Ok(ip),
