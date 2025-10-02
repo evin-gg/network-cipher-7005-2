@@ -58,9 +58,10 @@ pub fn client_response_handler(socket: &Socket) {
 
 // correct amount of server args
 pub fn server_arg_validation(args: &Vec<String>) -> Result<(), String> {
-    if args.len() != 2 {
-        return Err("Usage: <path>".into());
+    if args.len() != 3 {
+        return Err("Usage: <path> <port>".into());
     }
+
     else {
         Ok(()) 
     }
@@ -69,9 +70,14 @@ pub fn server_arg_validation(args: &Vec<String>) -> Result<(), String> {
 pub fn setup_server(args: &Vec<String>) -> Result<Socket, String> {
     let local_ip: IpAddr = args[1].parse().unwrap();
 
+    let port: u16 = match args[2].parse() {
+        Ok(p) => p,
+        Err(_) => return Err("[SERVER] Invalid port".to_string()),
+    };
+
     let (domain, addr) = match local_ip {
-        IpAddr::V4(v4) => (Domain::IPV4, SockAddr::from(SocketAddrV4::new(v4, 0))),
-        IpAddr::V6(v6) => (Domain::IPV6, SockAddr::from(SocketAddrV6::new(v6, 0, 0, 0))),
+        IpAddr::V4(v4) => (Domain::IPV4, SockAddr::from(SocketAddrV4::new(v4, port))),
+        IpAddr::V6(v6) => (Domain::IPV6, SockAddr::from(SocketAddrV6::new(v6, port, 0, 0))),
     };
 
 
