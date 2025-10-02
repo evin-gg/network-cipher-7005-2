@@ -61,6 +61,7 @@ pub fn shift_vig(text: &str, key: &str) -> String {
     return result;
 }
 
+//counts chars in a string
 pub fn count_chars(text: &str) -> usize {
     let mut count = 0;
     for c in text.chars() {
