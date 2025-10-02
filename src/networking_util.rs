@@ -1,89 +1,135 @@
 #![allow(dead_code)]
 
-use std::os::fd::OwnedFd;
-use nix::errno::Errno;
-use nix::sys::socket::{
-    socket, AddressFamily, SockType, SockFlag, MsgFlags, send
-};
-
+// standard
 use std::os::fd::AsRawFd;
+use std::net::{Ipv4Addr, IpAddr, SocketAddrV4};
 
-use std::path::Path;
+// network sockets
+use nix::sys::socket::{
+    MsgFlags, send, recv
+};
+use socket2::{Socket, Domain, Type, SockAddr};
 
-use socket2::{Socket};
-
-
-//-------------------------------------------------------------------
-// pub static CATCH_SIGINT: AtomicBool = AtomicBool::new(false);
-
-// extern "C" fn sigint_handler(_sig: i32) {
-//     CATCH_SIGINT.store(true, Ordering::SeqCst);
-// }
-
-// pub fn sigint_init() -> SigAction {
-//     return signal::SigAction::new(
-//         signal::SigHandler::Handler(sigint_handler),
-//         signal::SaFlags::empty(),
-//         signal::SigSet::empty());
-// }
-//-------------------------------------------------------------------
+// other util
+use get_if_addrs::get_if_addrs;
 
 
 
+// ---Client Setup functions---
 
-// Client Setup functions
-pub fn client_check_validpath(argpath: &Vec<String>) -> Result<(), String> {
-    let path = Path::new(&argpath[3]);
-    if path.exists() {
-        Ok(())
-    } else {
-        Err("[CLIENT] Socket does not exist".to_string())
-    }
-}
-
+// Validates arg count (variable)
 pub fn client_arg_validation(args: Vec<String>) -> Result<(), String> {
     if args.len() != 5 {
-        return Err("[CLIENT] Usage: <message> <key> <IPv4 address> <port>".to_string());
+        return Err("[CLIENT] Usage: <message> <key> <IP address> <port>".to_string());
     }
     else {
         Ok(()) 
     }
 }
 
-pub fn create_socket() -> Result<OwnedFd, Errno> {
-    return socket(AddressFamily::Inet, SockType::Stream, SockFlag::empty(), None);
-}
-
-pub fn format_send(args: Vec<String>, sock: &Socket) -> Result<(), Errno> {
+// formatting into send (variable)
+pub fn format_send(args: Vec<String>, sock: &Socket) -> Result<(), String> {
     let payload = format!("{}|{}", args[1], args[2]);
 
     match send(sock.as_raw_fd(), payload.as_bytes(), MsgFlags::empty()) {
         Ok(_bytes) => {return Ok(())},
-        Err(e) => {
-            return Err(e);
+        Err(_e) => {
+            return Err("[CLIENT] Could not send data".into());
         }
     };
 }
 
-// Server Setup functions
+// Reading a response
+pub fn client_response_handler(socket: &Socket) { 
+    let mut buffer = [0u8; 1024];
+    let _read_bytes = match recv(socket.as_raw_fd(), &mut buffer, MsgFlags::empty()) {
+        Ok(b) => {b},
+        Err(_b) => {
+            println!("Bytes not received");
+            return;
+        }
+    };
 
-
-
-pub fn server_check_validpath(argpath: &Vec<String>) -> Result<(), String> {
-
-    let path = Path::new(&argpath[1]);
-    if path.exists() {
-        Err("[SERVER] Old socket found, it will be unlinked and replaced".to_string())
-    } else {
-        Ok(())
-    }
+    println!("Message from server: {}", String::from_utf8_lossy(&buffer));
 }
+// --- END ---
 
-pub fn server_arg_validation(args: Vec<String>) -> Result<(), String> {
+// ---Server Setup functions---
+
+// correct amount of server args
+pub fn server_arg_validation(args: &Vec<String>) -> Result<(), String> {
     if args.len() != 2 {
-        return Err("[SERVER] Usage: <socketpath>".to_string());
+        return Err("Usage: <path>".into());
     }
     else {
         Ok(()) 
     }
 }
+
+pub fn setup_server(args: &Vec<String>) -> Result<Socket, String> {
+    let local_ip: Ipv4Addr = args[1].parse().unwrap();
+    let socket = match Socket::new(Domain::IPV4, Type::STREAM, None) {
+        Ok(s) => s,
+        Err(e) => {
+            return Err(format!("[CLIENT] Socket creation failed: {}", e))
+        }
+    };
+
+    let addr = SockAddr::from(SocketAddrV4::new(local_ip, 0));
+    match socket.bind(&addr) {
+        Ok(()) => {},
+        Err(e) => {
+            return Err(format!("[CLIENT] Bind failed: {}", e))
+        }
+    }
+
+    match socket.listen(5) {
+        Ok(()) => {},
+        Err(e) => {
+            return Err(format!("[CLIENT] Listen failed: {}", e))
+        }
+    }
+
+    let local_addr = socket.local_addr().expect("[SERVER] Could not get local address");
+
+    let std_addr = local_addr.as_socket_ipv4().unwrap();
+    println!("[SERVER] Server listening on {}", std_addr);
+
+    return Ok(socket)
+}
+// --- END ---
+
+
+// ---Universal---
+
+// checks for a valid ip
+pub fn check_valid_ip(argpath: &String) -> Result<(), String> {
+
+    let addr: Result<IpAddr, String> = match argpath.parse::<IpAddr>() {
+        Ok(ip) => Ok(ip),
+        Err(_) => {
+            return Err("Invalid IP address".into());
+        }
+    };
+
+    if addr?.is_loopback() {
+        return Err("IP address not allowed for use".into());
+    }
+
+    Ok(())
+}
+
+// getifaddrs for rust if needed
+pub fn find_address() -> Option<Ipv4Addr> {
+    for interface in get_if_addrs().expect("[SERVER] Could not get network interfaces") {
+        println!("[SERVER] Interface: {} - IP: {}", interface.name, interface.ip());
+        if let IpAddr::V4(ipv4) = interface.ip() {
+            if !ipv4.is_loopback() {
+                return Some(ipv4)
+            }
+        }
+    }
+
+    return None
+}
+// --- END ---

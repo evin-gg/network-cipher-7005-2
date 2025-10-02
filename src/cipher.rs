@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::str;
 
 pub fn split_payload(input: &[u8]) -> String {
