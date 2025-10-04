@@ -18,7 +18,7 @@ use get_if_addrs::get_if_addrs;
 // ---Client Setup functions---
 
 // Validates arg count (variable)
-pub fn client_arg_validation(args: Vec<String>) -> Result<(), String> {
+pub fn client_arg_validation(args: &Vec<String>) -> Result<(), String> {
     if args.len() != 5 {
         return Err("[CLIENT] Usage: <message> <key> <IP address> <port>".to_string());
     }
@@ -30,6 +30,21 @@ pub fn client_arg_validation(args: Vec<String>) -> Result<(), String> {
     }
     
     Ok(()) 
+}
+
+pub fn client_connect(args: &Vec<String>) -> Result<Socket, String> {
+    let socket = match Socket::new(Domain::IPV4, Type::STREAM, None) {
+        Ok(s) => {s},
+        Err(_e) => return Err("[CLIENT] Socket Creation Error".into())
+    };
+    
+    let addr = SockAddr::from(SocketAddrV4::new(args[3].parse().unwrap(), args[4].parse().unwrap()));
+    match socket.connect(&addr){
+        Ok(()) => {},
+        Err(_e) => {return Err("[CLIENT] Error Connecting to Server".into())}
+    };
+    println!("[CLIENT] Connected to server");
+    return Ok(socket);
 }
 
 // formatting into send (variable)
