@@ -66,7 +66,7 @@ fn main() {
     while catch.load(Ordering::SeqCst) {
 
         // accept
-        let (clientfd) = match socket.accept() {
+        let (clientfd, _clientaddr) = match socket.accept() {
             Ok((fd, addr)) => {
                 println!("[SERVER] Accepted connection");
                 (fd, addr)

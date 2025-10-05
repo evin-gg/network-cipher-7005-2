@@ -11,7 +11,7 @@ server:
 	$(SERVER) 192.168.1.79 50000
 
 serverip6:
-	$(SERVER) fe80::8b51:f72:7e67:2390 50000
+	$(SERVER) 2001:569:5213:4c00:876a:4be7:70ce:4c5 50000
 
 t1s:
 	$(SERVER) 
@@ -47,7 +47,7 @@ t9:
 	$(CLIENT) hellohelloooo apple 192.168.1.79 50000
 	
 t10:
-	$(CLIENT) may may fe80::8b51:f72:7e67:2390 50000
+	$(CLIENT) may may 2001:569:5213:4c00:876a:4be7:70ce:4c5 50000
 
 t11:
 	$(SERVER) 192.168.1.79 50000
