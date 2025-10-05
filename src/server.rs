@@ -77,8 +77,6 @@ fn main() {
             }
         };
 
-        println!("[SERVER] Accepted connection from {:?}", clientaddr);
-
         // read in
         let mut buf = [0u8; 1024];
         let read_bytes = match recv(clientfd.as_raw_fd(), &mut buf, MsgFlags::empty()){
