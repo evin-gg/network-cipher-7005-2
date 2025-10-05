@@ -13,8 +13,6 @@ use socket2::{Socket, Domain, Type, SockAddr};
 // other util
 use get_if_addrs::get_if_addrs;
 
-
-
 // ---Client Setup functions---
 
 // Validates arg count (variable)
@@ -136,10 +134,6 @@ pub fn setup_server(args: &Vec<String>) -> Result<Socket, String> {
 // checks for a valid ip
 pub fn check_valid_ip(argpath: &String) -> Result<(), String> {
 
-    if argpath == "localhost" || argpath == "127.0.0.1" {
-        return Ok(());
-    }
-
     let addr: Result<IpAddr, String> = match argpath.parse::<IpAddr>() {
         Ok(ip) => Ok(ip),
         Err(_) => {
@@ -147,7 +141,7 @@ pub fn check_valid_ip(argpath: &String) -> Result<(), String> {
         }
     };
 
-    if addr?.is_loopback() {
+    if addr.clone()?.is_multicast() || addr?.is_unspecified() {
         return Err("IP address not allowed for use".into());
     }
 
