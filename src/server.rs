@@ -21,16 +21,17 @@ use networking_util::{
 };
 use cipher::{split_payload};
 
-
+fn handle_signal(flag: &Arc<AtomicBool>) {
+    println!("Signal received");
+    flag.store(false, Ordering::SeqCst);
+}
 
 fn main() {
 
     let catch = Arc::new(AtomicBool::new(true));
     let c = catch.clone();
 
-    ctrlc::set_handler(move || {
-        c.store(false, Ordering::SeqCst);
-    }).expect("[SERVER] Signal Handler Error");
+    ctrlc::set_handler(move || handle_signal(&c)).expect("[SERVER] Signal Handler Error");
 
     // args
     let args: Vec<String> = env::args().collect();
@@ -92,7 +93,7 @@ fn main() {
         //send
         send(clientfd.as_raw_fd(), response.as_bytes(), MsgFlags::empty()).expect("[SERVER] Error sending response");
     }
-    println!("[SERVER] SIGINT caught");
+
     drop(socket);
     println!("[SERVER] Socket closed. Exiting");
 }
