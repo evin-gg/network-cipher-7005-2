@@ -31,16 +31,30 @@ pub fn client_arg_validation(args: &Vec<String>) -> Result<(), String> {
 }
 
 pub fn client_connect(args: &Vec<String>) -> Result<Socket, String> {
-    let socket = match Socket::new(Domain::IPV4, Type::STREAM, None) {
+    let local_ip: IpAddr = args[3].parse().unwrap();
+    let port: u16 = match args[4].parse() {
+        Ok(p) => p,
+        Err(_) => return Err("[SERVER] Invalid port".to_string()),
+    };
+
+    let (domain, addr) = match local_ip {
+        IpAddr::V4(v4) => (Domain::IPV4, SockAddr::from(SocketAddrV4::new(v4, port))),
+        IpAddr::V6(v6) => (Domain::IPV6, SockAddr::from(SocketAddrV6::new(v6, port, 0, 0))),
+    };
+    
+    let socket = match Socket::new(domain, Type::STREAM, None) {
         Ok(s) => {s},
         Err(_e) => return Err("[CLIENT] Socket Creation Error".into())
     };
     
-    let addr = SockAddr::from(SocketAddrV4::new(args[3].parse().unwrap(), args[4].parse().unwrap()));
     match socket.connect(&addr){
         Ok(()) => {},
         Err(_e) => {return Err("[CLIENT] Error Connecting to Server".into())}
     };
+
+    
+
+
     println!("[CLIENT] Connected to server");
     return Ok(socket);
 }
@@ -102,26 +116,26 @@ pub fn setup_server(args: &Vec<String>) -> Result<Socket, String> {
     let socket = match Socket::new(domain, Type::STREAM, None) {
         Ok(s) => s,
         Err(e) => {
-            return Err(format!("[CLIENT] Socket creation failed: {}", e))
+            return Err(format!("[SERVER] Socket creation failed: {}", e))
         }
     };
 
     match socket.bind(&addr) {
         Ok(()) => {},
         Err(e) => {
-            return Err(format!("[CLIENT] Bind failed: {}", e))
+            return Err(format!("[SERVER] Bind failed: {}", e))
         }
     }
 
     match socket.listen(5) {
         Ok(()) => {},
         Err(e) => {
-            return Err(format!("[CLIENT] Listen failed: {}", e))
+            return Err(format!("[SERVER] Listen failed: {}", e))
         }
     }
 
     let local_addr = socket.local_addr().expect("[SERVER] Could not get local address");
-    let std_addr = local_addr.as_socket_ipv4().unwrap();
+    let std_addr = local_addr.as_socket().unwrap();
     println!("[SERVER] Server listening on {}", std_addr);
 
     return Ok(socket)

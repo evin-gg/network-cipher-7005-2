@@ -68,7 +68,7 @@ fn main() {
         // accept
         let (clientfd, clientaddr) = match socket.accept() {
             Ok((fd, addr)) => {
-                println!("[SERVER] Accepted connection from {:?}", addr);
+                println!("[SERVER] Accepted connection");
                 (fd, addr)
             },
             Err(e) => {
